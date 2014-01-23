@@ -215,8 +215,8 @@ app.get('/auth/steam/return',
     req.user.files = [];
     req.user.provider = 'steam';
     req.user.id = req.user.identifier.replace('http://steamcommunity.com/openid/id/','');
-    if( displayName == 'undefined' ) {
-      displayName = 'unknown';
+    if( req.user.displayName == 'undefined' ) {
+      req.user.displayName = 'unknown';
     }
     delete req.user.identifier;
     delete req.user.name;
