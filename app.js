@@ -3,6 +3,7 @@ var express = require('express')
   , util = require('util')
   , path = require('path')
   , GoogleStrategy = require('passport-google-oauth').OAuthStrategy
+  , SteamStrategy = require('passport-steam').Strategy
   , couchbase = require('couchbase')
   , fs = require('fs');
 
@@ -55,7 +56,27 @@ passport.use(new GoogleStrategy({
   }
 ));
 
+// Use the SteamStrategy within Passport.
+//   Strategies in passport require a `validate` function, which accept
+//   credentials (in this case, an OpenID identifier and profile), and invoke a
+//   callback with a user object.
+passport.use(new SteamStrategy({
+    returnURL: 'http://localhost:3000/auth/steam/return',
+    realm: 'http://localhost:3000/'
+  },
+  function(identifier, profile, done) {
+    // asynchronous verification, for effect...
+    process.nextTick(function () {
 
+      // To keep the example simple, the user's Steam profile is returned to
+      // represent the logged-in user.  In a typical application, you would want
+      // to associate the Steam account with a user record in your database,
+      // and return that user instead.
+      profile.identifier = identifier;
+      return done(null, profile);
+    });
+  }
+));
 
 
 var app = express();
@@ -119,6 +140,7 @@ app.get('/login', function(req, res){
   res.render('login', { user: req.user });
 });
 
+
 // GET /auth/google
 //   Use passport.authenticate() as route middleware to authenticate the
 //   request.  The first step in Google authentication will involve redirecting
@@ -159,14 +181,62 @@ app.get('/auth/google/callback',
         db.set( req.user.id, req.user, function(err, result) {
           if (err) throw err;
           console.log( 'Created A New User: ' + req.user.id );
-          res.redirect('/');
+          res.redirect('/account');
         });
       } else {
         console.log( 'User logged in: ' + req.user.id );
-        res.redirect('/');
+        res.redirect('/account');
       }
     });
   });
+
+
+// GET /auth/steam
+//   Use passport.authenticate() as route middleware to authenticate the
+//   request.  The first step in Steam authentication will involve redirecting
+//   the user to steam.com.  After authenticating, Steam will redirect the
+//   user back to this application at /auth/steam/return
+app.get('/auth/steam',
+  passport.authenticate('steam', { failureRedirect: '/login' }),
+  function(req, res) {
+    res.redirect('/');
+  });
+
+// GET /auth/steam/return
+//   Use passport.authenticate() as route middleware to authenticate the
+//   request.  If authentication fails, the user will be redirected back to the
+//   login page.  Otherwise, the primary route function function will be called,
+//   which, in this example, will redirect the user to the home page.
+app.get('/auth/steam/return',
+  passport.authenticate('steam', { failureRedirect: '/login' }),
+  function(req, res) {
+    console.log( req.user );
+    req.user.files = [];
+    req.user.id = req.user.identifier;
+    delete req.user.identifier;
+
+    // user {
+    //   provider: 'google',
+    //   id: 'tdy721@gmail.com',
+    //   displayName: 'Taylor Young',
+    //   emails: [ { value: 'taylor@reapmarketing.com' } ],
+    //   files: []
+    // }
+
+    db.get( req.user.id, function(err, result) {
+      if (err) {
+        db.set( req.user.id, req.user, function(err, result) {
+          if (err) throw err;
+          console.log( 'Created A New User: ' + req.user.id );
+          res.redirect('/account');
+        });
+      } else {
+        console.log( 'User logged in: ' + req.user.id );
+        res.redirect('/account');
+      }
+    });
+  });
+
 
 app.get('/logout', function(req, res){
   req.logout();
