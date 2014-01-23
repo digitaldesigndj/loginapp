@@ -63,8 +63,8 @@ passport.use(new GoogleStrategy({
 //   credentials (in this case, an OpenID identifier and profile), and invoke a
 //   callback with a user object.
 passport.use(new SteamStrategy({
-    returnURL: 'http://localhost:3000/auth/steam/return',
-    realm: 'http://localhost:3000/'
+    returnURL: 'http://hyprtxt.com/auth/steam/return',
+    realm: 'http://hyprtxt.com/'
   },
   function(identifier, profile, done) {
     // asynchronous verification, for effect...
