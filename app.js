@@ -169,6 +169,7 @@ app.get('/auth/google/callback',
     delete req.user._json;
     delete req.user._raw;
     req.user.files = [];
+    req.user.player = '';
 
     // user {
     //   provider: 'google',
@@ -192,6 +193,28 @@ app.get('/auth/google/callback',
     });
   });
 
+
+
+app.post('/update_player', ensureAuthenticated, function(req, res){
+  console.log( req.body.player );
+  console.log( req.body );
+  // console.log( req.user );
+
+  db.get( req.user.id, function(err, result) {
+    if (err) throw err;
+    user = result.value;
+    console.log( user );
+    user.player = req.body.player;
+    user.displayName = req.body.displayName;
+    console.log( user );
+    db.set( req.user.id, user, function(err, result) {
+      if (err) throw err;
+      console.log( 'Updated Profile: ' + req.user.id );
+      console.log( user );
+      res.redirect('/account');
+    });
+  });
+});
 
 // GET /auth/steam
 //   Use passport.authenticate() as route middleware to authenticate the

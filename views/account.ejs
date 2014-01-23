@@ -7,8 +7,13 @@
 	<img src="/<%= el %>" alt="<%= index %>" style="width:100px; height: 100px;" />
 <% }); %>
 
-<p>ID: <%= user.id %></p>
-<p>Name: <%= user.displayName %></p>
+<h2>Edit Profile Info</h2>
+<form action="/update_player" method="post">
+	<p>ID: <input value="<%= user.id %>" name="id"></p>
+	<p>Real Name: <input value="<%= data.displayName %>" name="displayName"></p>
+	<p>Player Name: <input value="<%= data.player %>" name="player"></p>
+	<button>Submit</button>
+</form>
 
 <form action="/upload?user=<%= user %>" class="dropzone" id="my-dropzone"></form>
 
