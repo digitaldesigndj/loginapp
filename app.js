@@ -6,8 +6,10 @@ var express = require('express')
   , SteamStrategy = require('passport-steam').Strategy
   , couchbase = require('couchbase')
   , fs = require('fs');
+// "localhost:8091"
+var hostname = 'db.hyprtxt.com:8091';
 
-var db = new couchbase.Connection({bucket: "users"}, function(err) {
+var db = new couchbase.Connection({ host: hostname, bucket: "users" }, function(err) {
   if (err) throw err;
 });
 
@@ -210,10 +212,11 @@ app.get('/auth/steam',
 app.get('/auth/steam/return',
   passport.authenticate('steam', { failureRedirect: '/login' }),
   function(req, res) {
-    console.log( req.user );
     req.user.files = [];
+    req.user.provider = 'steam';
     req.user.id = req.user.identifier;
     delete req.user.identifier;
+    delete req.user.name;
 
     // user {
     //   provider: 'google',
