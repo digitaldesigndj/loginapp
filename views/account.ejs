@@ -4,7 +4,8 @@
 <script src="/js/dropzone.js"></script>
 
 <% data.files.forEach(function(el, index) { %>
-	<img src="/<%= el %>" alt="<%= index %>" style="width:100px; height: 100px;" />
+	<img src="/<%= el %>" alt="<%= index %>" style="width:130px; height: 160px;" />
+	<a href="/remove_upload?index=<%= index %>">delete</a>
 <% }); %>
 
 <h2>Edit Profile Info</h2>

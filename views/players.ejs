@@ -1,0 +1,9 @@
+<% include head.ejs %>
+<!-- <%= JSON.stringify(players) %> -->
+<ul>
+<% players.forEach( function(el, index) { %>
+	<li><%= index %> - <%=el.player %></li>
+	<img src="/<%=el.files[0] %>" alt="<%=el.player %>" style="width:130px; height: 160px;" />
+<% }); %>
+</ul>
+<% include foot.ejs %>

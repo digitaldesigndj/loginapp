@@ -5,7 +5,8 @@ var express = require('express')
   , GoogleStrategy = require('passport-google-oauth').OAuthStrategy
   , SteamStrategy = require('passport-steam').Strategy
   , couchbase = require('couchbase')
-  , fs = require('fs');
+  , fs = require('fs')
+  , _ = require('underscore');
 // "localhost:8091"
 var hostname = 'db.hyprtxt.com:8091';
 
@@ -109,6 +110,51 @@ app.get('/', function(req, res){
   res.render('index', { user: req.user });
 });
 
+app.get('/admin', ensureAdminAuthenticated, function(req, res){
+  res.render('index', { user: { displayName:'WELCOME SUPERADMIN' } });
+});
+
+
+var ENTRIES_PER_PAGE = 10;
+function list_players(req, res) {
+  var q = {
+    limit : ENTRIES_PER_PAGE,   // configure max number of entries.
+    stale : false               // We don't want stale views here.
+  };
+
+  db.view( "players", "by_name", q).query(function(err, values) {
+    var keys = _.pluck(values, 'id');
+    db.getMulti( keys, null, function(err, results) {
+
+      // Add the id to the document before sending to template
+      var players = _.map(results, function(v, k) {
+        v.value.id = k;
+        return v.value;
+      });
+      res.render('players', {user: req.user, 'players':players});
+    })
+  });
+}
+app.get('/players', list_players);
+
+
+function remove_upload(req, res) {
+  console.log( req.query.index );
+  db.get( req.user.id, function(err, result) {
+    if (err) throw err;
+    var user = result.value;
+    console.log( user );
+    if ( req.query.index > -1 ) {
+      user.files.splice( req.query.index, 1 );
+    }
+    console.log( user );
+    db.set( req.user.id, user, function(err, result) {
+      if (err) throw err;
+      res.redirect("back");
+    });
+  });
+}
+app.get('/remove_upload', remove_upload);
 
 app.post('/upload', function (req, res) {
   // var imagename = "_profile." + req.files.file.name.split('.').pop();
@@ -170,14 +216,18 @@ app.get('/auth/google/callback',
     delete req.user._raw;
     req.user.files = [];
     req.user.player = '';
+    req.user.rank = 'player';
+    req.user.achievements = ['registered'];
 
-    // user {
+    // var user = {
     //   provider: 'google',
     //   id: 'tdy721@gmail.com',
     //   displayName: 'Taylor Young',
     //   emails: [ { value: 'taylor@reapmarketing.com' } ],
-    //   files: []
-    // }
+    //   files: [],
+    //   rank: 'player',
+    //   achievements: ['registered']
+    // };
 
     db.get( req.user.id, function(err, result) {
       if (err) {
@@ -243,14 +293,19 @@ app.get('/auth/steam/return',
     }
     delete req.user.identifier;
     delete req.user.name;
+    req.user.player = '';
+    req.user.rank = 'player';
+    req.user.achievements = ['registered'];
 
-    // user {
+    // var user = {
     //   provider: 'google',
     //   id: 'tdy721@gmail.com',
     //   displayName: 'Taylor Young',
     //   emails: [ { value: 'taylor@reapmarketing.com' } ],
-    //   files: []
-    // }
+    //   files: [],
+    //   rank: 'player',
+    //   achievements: ['registered']
+    // };
 
     db.get( req.user.id, function(err, result) {
       if (err) {
@@ -283,5 +338,10 @@ app.listen(process.env.PORT||3000);
 //   login page.
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login');
+}
+
+function ensureAdminAuthenticated(req, res, next) {
+  if ( req.isAuthenticated() && req.user.id === 'tdy721@gmail.com' ) { return next(); }
   res.redirect('/login');
 }
