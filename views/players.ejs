@@ -4,6 +4,15 @@
 <% players.forEach( function(el, index) { %>
 	<li><%= index %> - <%=el.player %></li>
 	<img src="/<%=el.files[0] %>" alt="<%=el.player %>" style="width:130px; height: 160px;" />
+	<select>
+		<option></option>
+		<option>Builder</option>
+		<option>ProBuilder</option>
+		<option>Donator</option>
+		<option>Admin</option>
+		<option>root</option>
+	</select>
+
 <% }); %>
 </ul>
 <% include foot.ejs %>

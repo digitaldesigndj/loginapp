@@ -6,7 +6,9 @@ var express = require('express')
   , SteamStrategy = require('passport-steam').Strategy
   , couchbase = require('couchbase')
   , fs = require('fs')
-  , _ = require('underscore');
+  , _ = require('underscore')
+  , $ = require('jquery')
+  , connect = require('connect');
 // "localhost:8091"
 var hostname = 'db.hyprtxt.com:8091';
 
@@ -84,6 +86,7 @@ passport.use(new SteamStrategy({
 
 var app = express();
 
+
 // all environments
 // app.set('port', process.env.PORT || 3000);
 app.set('views', path.join(__dirname, 'views'));
@@ -93,7 +96,8 @@ app.use(express.logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded());
 app.use(express.methodOverride());
-app.use(express.cookieParser('your secret here'));
+app.use(express.cookieParser('your secret here for nother one'));
+app.use(connect.cookieSession({ secret: 'new one this secure later', cookie: { maxAge: 60 * 60 * 1000 }}));
 app.use(express.session({ secret: 'keyboard cat likes tuna' }));
 app.use(express.bodyParser());
 // Initialize Passport!  Also use passport.session() middleware, to support
@@ -105,6 +109,30 @@ app.use(require('stylus').middleware(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'uploads')));
 
+
+// GET REMOTE JSON = All Players
+var http = require('http');
+var ALL_PLAYERS = {};
+var req = http.get('http://boundstar.com/all_players.json', function(res) {
+  console.log('STATUS: ' + res.statusCode);
+  console.log('HEADERS: ' + JSON.stringify(res.headers));
+
+  // Buffer the body entirely for processing as a whole.
+  var bodyChunks = [];
+  res.on('data', function(chunk) {
+    // You can process streamed parts here...
+    bodyChunks.push(chunk);
+  }).on('end', function() {
+    var body = Buffer.concat(bodyChunks);
+    console.log('BODY: ' + body);
+    ALL_PLAYERS = JSON.parse(body);
+    // ...and/or process the entire body here.
+  })
+});
+
+req.on('error', function(e) {
+  console.log('ERROR: ' + e.message);
+});
 
 app.get('/', function(req, res){
   res.render('index', { user: req.user });
@@ -225,6 +253,8 @@ app.get('/auth/google/callback',
     //   displayName: 'Taylor Young',
     //   emails: [ { value: 'taylor@reapmarketing.com' } ],
     //   files: [],
+    //   player: '',
+    //   playerData: {}
     //   rank: 'player',
     //   achievements: ['registered']
     // };
@@ -253,10 +283,9 @@ app.post('/update_player', ensureAuthenticated, function(req, res){
   db.get( req.user.id, function(err, result) {
     if (err) throw err;
     user = result.value;
-    console.log( user );
     user.player = req.body.player;
     user.displayName = req.body.displayName;
-    console.log( user );
+    user.playerData = _.find(ALL_PLAYERS, function(player){ return player.name == user.player; });
     db.set( req.user.id, user, function(err, result) {
       if (err) throw err;
       console.log( 'Updated Profile: ' + req.user.id );
@@ -294,6 +323,7 @@ app.get('/auth/steam/return',
     delete req.user.identifier;
     delete req.user.name;
     req.user.player = '';
+    req.user.playerData = '';
     req.user.rank = 'player';
     req.user.achievements = ['registered'];
 
@@ -303,6 +333,8 @@ app.get('/auth/steam/return',
     //   displayName: 'Taylor Young',
     //   emails: [ { value: 'taylor@reapmarketing.com' } ],
     //   files: [],
+    //   player: '',
+    //   playerData: {}
     //   rank: 'player',
     //   achievements: ['registered']
     // };
