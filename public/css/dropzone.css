@@ -162,7 +162,7 @@
   padding: 23px;
 }
 .dropzone .dz-default.dz-message {
-  opacity: 1;
+  opacity: 0;
   -ms-filter: none;
   filter: none;
   -webkit-transition: opacity 0.3s ease-in-out;
@@ -170,7 +170,7 @@
   -o-transition: opacity 0.3s ease-in-out;
   -ms-transition: opacity 0.3s ease-in-out;
   transition: opacity 0.3s ease-in-out;
-  background-image: url("../images/spritemap.png");
+  /*background-image: url("../images/spritemap.png");*/
   background-repeat: no-repeat;
   background-position: 0 0;
   position: absolute;

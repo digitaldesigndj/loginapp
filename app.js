@@ -124,7 +124,7 @@ var req = http.get('http://boundstar.com/all_players.json', function(res) {
     bodyChunks.push(chunk);
   }).on('end', function() {
     var body = Buffer.concat(bodyChunks);
-    console.log('BODY: ' + body);
+    console.log( 'All Players Data Set' );
     ALL_PLAYERS = JSON.parse(body);
     // ...and/or process the entire body here.
   })
@@ -285,7 +285,7 @@ app.post('/update_player', ensureAuthenticated, function(req, res){
     user = result.value;
     user.player = req.body.player;
     user.displayName = req.body.displayName;
-    user.playerData = _.find(ALL_PLAYERS, function(player){ return player.name == user.player; });
+    user.playerData = _.find(ALL_PLAYERS, function(player){ return player.name === user.player; });
     db.set( req.user.id, user, function(err, result) {
       if (err) throw err;
       console.log( 'Updated Profile: ' + req.user.id );
